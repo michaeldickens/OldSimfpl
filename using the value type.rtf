@@ -1,0 +1,50 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf320
+{\fonttbl\f0\fnil\fcharset0 Monaco;\f1\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green116\blue0;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f0\fs20 \cf0 The interpreter supports dynamic typing through a large set of functions to work with the value type. value is a struct defined in tools.h. It contains an integer (type) representing the type, and a union (core) representing the value. Since (core) usually contains a pointer, do not copy a value like this: \
+\
+	value op1 = /* some value */\
+	value op2 = op1;\
+\
+In this case, both op1 and op2 will refer to the same object. But if you modify the type of op1, the type of op2 will stay the same and the contents of op2 will be undefined. Never directly assign values unless you're sure that one of the values will never be referenced. To quickly copy a value, do this: \
+\
+	value op2 = op1;\
+	op1.type = VALUE_NIL;\
+\
+This sets the type of op1 to nil, guaranteeing that nothing will try to access its contents.\
+\
+The safest way to copy a value is with the value_set() function: \
+\
+	value op2 = value_set(op1);\
+\
+This will create a deep copy of the contents of op1, so if you change op1, op2 will still be safe. The downside is that if op1 is big, this will take a lot longer because the contents have to be copied.\
+\
+When values are created, they allocate memory. If you're done with a value you need to clear it by passing a pointer to the value to value_clear(). This will clear its contents and set it to nil. A value of type VALUE_NIL is the only type guaranteed not to have performed any memory allocation.\
+\
+================\
+\
+Functions\
+\
+Most value functions return a value, such as value_add(op1, op2) which adds op1 and op2 and returns the result. If such a function has an error, a value of type VALUE_ERROR will be returned.\
+\
+Some functions, though, such as value_cmp(op1, op2), return an integer. If such a function has an error, the function documentation will tell you what is returned.\
+\
+As a convention, any time a pointer to a value is passed to a function, the value could be modified. If the value is not passed in as a pointer but instead is passed directly, it is guaranteed not to be modified.\
+\
+Function names often have one of the following suffixes.\
+\
+_p: Indicates that the function returns a boolean value (true or false).\
+\
+_now: Performs the operation in place. A pointer to the value is passed in, and that value is modified. For example, value_append(op1, op2) with 2 arrays will create a new array that's the result of op2 appended to op1, but value_append_now(*op1, op2) will append a copy of op2 directly to op1, modifying op1.\
+\
+_now2: Performs the operation in place, modifying both inputs. For example, value_append_now2(*op1, *op2) will append op2 directly to op1, modifying op1. The value of op2 will then be a reference to the same object as is now appended to op1. If you change one of the values and then try to access or change the other, behavior is undefined. Only use _now2() if you are sure that op2 won't ever be accessed.\
+\
+_std: Some functions by default return a non-value, such as value_cmp() which returns an int. A function suffixed with "std", which is short for "standard", will behave exactly the same as the regular function except that the returned result will be a value.\
+\
+_ref: Usually used in functions that access an element of a container. Instead of returning a copy of that element, a function ending in "ref" will return a pointer to the element.\
+\pard\tx560\pardeftab560\ql\qnatural\pardirnatural
+
+\f1\fs22 \cf2 \CocoaLigature0 \
+}

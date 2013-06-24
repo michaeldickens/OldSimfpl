@@ -1,0 +1,258 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
+\cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 Monaco;}
+{\colortbl;\red255\green255\blue255;}
+\vieww10800\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f0\fs20 \cf0 Current name(s): Simple Interpreted Mathematically-Oriented Functional Programming Language (SIMFPL). Since programming languages that used to be acronyms so often deteriorate into proper nouns (e.g. LISP to Lisp, FORTRAN to Fortran), I'll skip that whole "natural evolution of language" thing and jump right to calling it Simfpl. It's pronounced "simple".\
+\
+A dynamic, strongly-typed*, functional programming language.\
+\
+*Strongly-typed, except for regarding strings. When an operation is perfomed on a string and a non-string, the non-string is converted to a string. This is done because it makes things easier.\
+\
+****************\
+\
+Contents\
+\
+- Design Concepts\
+\
+- Functions\
+- Function Behavior\
+\
+- Primitive Data Types\
+- More About Strings\
+- Containers\
+- More Data Types\
+\
+- Control Structures\
+- Statements and Expressions\
+- Loops\
+\
+- Defining Your Own Functions\
+- Variables and Scope\
+- Anonymous Functions\
+- Macros\
+\
+****************\
+\
+Design Concepts\
+\
+The following are the core design concepts of Simfpl.\
+\
+Extensibility. Virtually everything in Simfpl is either a function or a value. There are no control structures, only functions. A few functions have to work a bit differently, but the Simfpl interpreter goes to great lengths to ensure that even special functions may be used just as though they were any other function.\
+\
+Brevity. You can say what you want to say with as few lines of code as possible. And if you can't, you simply extend the language.\
+\
+Strong support for math. Numbers are implemented with GNU GMP, a very fast implementation for big numbers. Dozens of mathematical functions are supported: arithmetic, bitwise operators, number-theoretic functions, and more.\
+\
+Flexible syntax. Although it is Lisp-like, Simfpl is designed around the philosophy that syntax matters. It doesn't matter how simple or concise your program is if you can't read it. That's why Simfpl supports both prefix and infix notation, and functions look just like operators so that they are easy to use in differnt ways.\
+\
+****************\
+\
+Functions\
+\
+Everything in Simfpl is a function, even the primitive operators. Functions in Simfpl are not called in the traditional way; rather, they are called in a way more similar to Lisp. The syntax allows user-defined functions to feel more like operators and in many cases to look cleaner. They can be called either in prefix or infix notation. Addition can be called as (+ x y) or (x + y). In infix notation, operator precedence is the same as it would be in C.\
+\
+Functions with more than two arguments cannot be called using infix notation. Rather, they should be called in prefix notation and surrounded in parentheses, as with Lisp: (f x y z). To call a function f with three arguments x y and z, and then add 5 to the result, you can use ((f x y z) + 5) or (+ f x y z 5) -- or pass in the arguments in the other direction, which looks like (5 + (f x y z)) or (+ 5 f x y z). In prefix expressions you may add expressions if you wish, making (+ f x y z 5) look like (+ (f x y z) 5), (+ (f x y z) (5)), or even (+ (f (x) y (z)) ((5))).\
+\
+********\
+\
+Function Behavior\
+\
+Using multiple unary operators can get a little tricky. When a statement only uses unary operators, the parser has a different method of determining whether it is prefix or infix. You can have either a single unary operator before the operand with the rest of the operators after, or you can have all the operators before or all after the operand. Most unary operators are evaluated left to right.\
+\
+Infix and Prefix Notation\
+\
+Elengant supports both infix and prefix notation, which both provide different functionalities. In general, prefix is more flexible and should generally be used for functions that aren't operators; however, infix can still be useful. In order to keep some things cleaner, such as mathematical operations, infix may be used. It is recommended that infix not be used with a function that has more than two arguments.\
+\
+The compiler treats each block in parentheses as separate, so you can put an infix expression in parentheses inside of a prefix expression, or vice versa. For example (x + y + z) can also be written as (+ x (y + z)), which uses an infix expression inside of a prefix expression. It could also be written as (x + (+ y z)), with a prefix expression inside of an infix expression.\
+\
+****************\
+\
+Primitive Data Types\
+\
+The two most basic data types are integers and floats. They can both hold numbers of arbitrary size. They are represented internally by the GNU GMP and MPFR datatypes, respectively. The full range of normal operators is supported, as well as many more.\
+\
+Strings are also supported. Strings are passed in by placing characters "inside quotes". Quotation marks can be included inside strings by escaping them with a backslash, "like this: \\" ". They are represented internally as a C array of characters, but strings in Simfpl are much more powerful than in C. Regular expressions are supported as well, and work very much like strings. See "More About Strings" for more information about strings and regular expressions.\
+\
+The values true, false, and nil are also supported.\
+\
+When dealing with booleans, nil, false, 0, 0.0, "", and empty containers are considered false. Everything else is considered true. You can use the (true?) function to determine if a given value is true or false.\
+\
+********\
+\
+More About Strings\
+\
+A string literal is an array of characters contained within quotes. These are all strings: "hello", "This is a string", "Line one\\nLine two." A string may contain any character in the ASCII set, but the only supported escape characters are \\', \\", \\n, \\r and \\t.\
+\
+Regular expressions work very much like strings, except that they are created by placing text in between single quotes: 'this is a regular expression'. Regular expressions are supported with the GNU POSIX Regular Expression Library (http://www.gnu.org/s/libc/manual/html_node/Regular-Expressions.html). In addition to the syntax supported by the GNU library, Simfpl also supports character sets \\w, \\W, \\d, \\D, \\s, and \\S.\
+\
+********\
+\
+Containers\
+\
+Simfpl has native support for both arrays and linked lists. Arrays are perhaps better supported, as they are generally more useful in Simfpl. They are created with generator functions called "array" and "list", for example (array 1 2 3) returns an array containing elements 1, 2, and 3. Arrays and lists can contain any data type, including other arrays and lists. (array 3 "hello" 10) and (list (array 1 2 3) "second element" (list 1 2 3) "last element") are both legal expressions. \
+\
+Arrays can also be created with some syntactic sugar: (1, 2, 3) amounts to the same thing as (array 1 2 3). Lists can be constructed using the -> (pronounced "cons") function -- the cons function should be familiar to anyone who has worked with linked lists before. cons is right-associative, so (1 -> 2 -> 3 -> nil) will correctly evaluate to (list 1 2 3).\
+\
+Arrays and lists (as well as some other containers) have some special functions called iterators. An iterator function iterates over each element of the container and performs some action. The simplest is the each() iterator, used like ((container) each (block)) which calls (block) for each element of (container).\
+\
+********\
+\
+More Data Types\
+\
+Symbol\
+\
+A symbol is a constant string, created by preceding a name with a colon. Symbols are used internally in places like the for loop's condition to tell how to iterate.\
+\
+Hash\
+\
+A hash is a generalization of an array where any type of key can refer to any type of value. It doesn't have as many functions as arrays, but it's more useful in some cases. It is created with a generator function named "hash", where each key is followed directly by the corresponding value. So (hash "monkey" 10 "tree" 15) will create a hash with key "monkey" referring to value 10, and key "tree" referring to value 15.\
+\
+Range\
+\
+A range is an efficient way to hold a range of values. It is created with a range constructor (..) or (...), where the former creates a range including the first through last element and the latter creates a range containing the first up until the last element. In other words, (x..y) contains every value on [x, y] and (x...y) contains every value on [x, y). Ranges may be iterated over just like arrays and lists.\
+\
+****************\
+\
+Control Structures\
+\
+Structures such as "if" or "while" work very similarly to functions. An if statement takes either two or thee arguments, while a while loop Simfpl takes two arguments. The following are all legal inputs: \
+\
+	if true 3				==> 3\
+	if (true) 3			==> 3\
+	if (2 + 2 == 4) 3		==> 3\
+	if false 3			==> nil\
+	if true (3 + 2)		==> 5\
+	if true (a = 3; a)		==> 3\
+\
+If statements also can have a third argument, which is evaluated if the condition returns false. If none is given, it defaults to nil.\
+\
+"if" and "while" each have corresponding function, "unless" and "until" respectively; unless (x) is equivalent to if (!(x)), and until (x) is equivalent to while (!(x)).\
+\
+********\
+\
+Statements and Expressions\
+\
+Simfpl does not have statements in the same way as most imperative languages. Everything is an expression, and every expression returns a value.\
+\
+The semicolon can act as a statement separator, allowing you to put multiple statements on one line or inside of parentheses. The way you use a semicolon appears to be just like you would in an imperative language like C++ or Java. For example, \
+\
+	x = 3; x += 2					==> 5\
+	str = "hello"; "goodbye"		==> "goodbye"\
+	i = 0; i += 1; i += 1; i += 1	==> 3\
+\
+This has an aesthetically pleasing look. However, the semicolon actually works quite differently than you might expect. It's not a statement separator: it's a function. The semicolon function takes two expressions as arguments and evaluates them both in order. So the examples above could also be written as, \
+\
+	; = x 3 += x 2						==> 5\
+	; (str = "hello") "goodbye"				==> "goodbye"\
+	; ; (i = 0 ; i += 1) (i += 1) (i += 1)	==> 3\
+\
+The semicolon works just like any other function, but serves to make programs look a little friendlier.\
+\
+Multi-Line Blocks\
+\
+A series of expressions in between curly brackets and spanning multiple lines will be converted into a block, and each newline separator will be converted into a semicolon. So the block \
+\
+	\{\
+	x = 3\
+	println x\
+	\}\
+\
+will become ((x = 3); (println x)). Each line is put into a separate block in order to prevent collisions that would otherwise be caused by a combination of infix and prefix expressions. If you try to evaluate \
+	\
+	(x = 3\
+	* x 2)\
+\
+it will not compile correctly. However, if you had surrounded it in curly brackets instead of parentheses, the two lines would have been separated.\
+\
+********\
+\
+Loops\
+\
+Do/While\
+\
+There is no distinct do/while loop, but it can be simulated. The most obvious way to simulate do \{ body \} while (condition) is with\
+\
+	while true \{\
+		body\
+		unless condition\
+			break\
+	\}\
+\
+But there is a more elegant way. A while loop takes two arguments, which are both treated as blocks. And, because of this, either block can contain any number of statements and they will all be evaluated. Thus, the body of the while loop can be placed inside the first block, like so: \
+\
+while \{\
+	body\
+	condition\
+\} nil\
+\
+This will continue executing (body) and (condition) until the block returns false, at which time the while loop will exit.\
+\
+For Loops\
+\
+The most complicated sort of loop is the for loop. Like the while loop, it takes two blocks as arguments, and can evaluate in different ways. Probably the most common form is this: \
+\
+	for (element :in set) \{\
+		body\
+	\}\
+\
+This will execute (body) for each element in (set), named (element). It is equivalent to (set each (def f(element) (body))), with one important difference: scope does not change inside of the body. This is useful for producing side effects.\
+\
+Loops can have four keywords: break, continue, yield, and return. break, continue and return work just like in C or any C-based language. yield takes a single argument, and every argument yielded during the course of the loop is put into an array. If nothing is yielded, the loop returns nil.\
+\
+****************\
+\
+Defining Your Own Functions\
+\
+As you saw with if statements and loops, almost everything in Simfpl is a function. The (def) function isn't quite the same as other functions, but it's just about as close as you can get.\
+\
+(def) takes three arguments: the function name, a block containing the variable list, and a block containing the function body. For example: \
+\
+	def my_function (x) \{\
+		println "Passed " + x + " to my function."\
+	\}\
+\
+You can then call this function just like you'd call any primitive function or operator.\
+\
+********\
+\
+Variables and Scope\
+\
+In Simfpl you can create variables to store your data. A global variable is a variable that begins with "$", and may be accessed from anywhere in the program's scope.\
+\
+Variables are only defined within their scope. If you define a variable outside of a scope and then redefine it within a scope, the new definition is forgotten once you leave the inner scope. The only time scope changes is when you step inside a function body.\
+\
+	def f(x) (println x)\
+	x = 1 // In the outermost scope, x is 1.\
+	println x\
+	f(2) // In the body of f(x), x is 2.\
+	println x // The program "remembers" that x is 1.\
+\
+The above program will print "1\\n2\\n1". The x inside of f(x) is different from the outer x, so modifying the x inside f(x) does not modify the x in the outer scope.\
+\
+********\
+\
+Anonymous Functions\
+\
+It is possible to temporarily define a function with no name. An anonymous function will not be stored in the interpreter's internal registry of functions. One way to do this is to give the function name as nil: \
+\
+	def nil (vars) (body)\
+\
+Although this is the most fundamental way to create an anonymous function, there is a simpler way which amounts to the same thing. This way is the lambda() function: \
+\
+	lambda (vars) (body)\
+\
+This may be used for defining functions that will only be used once, such as when passing a function as an argument to an iterator. For example, ((0..9) each (lambda (x) (print x))) will print out "0123456789".\
+\
+********\
+\
+Macros\
+\
+Notice: Currently there is no good reason for macros to exist. They may be implemented at some point in the future, according to the following specifications.\
+\
+In addition to creating functions you can create macros in a similar style to Lisp. A macro is like a function, except instead of taking input values and returning an output value, it takes input blocks and returns an output block. Essentially, it's a way of shortening your code.\
+\
+Macros are expanded at compile time but defined at runtime. What this means is that you are unable to define a macro and use it in the same statement.\
+\
+}

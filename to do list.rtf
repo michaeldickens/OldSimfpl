@@ -1,0 +1,128 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf320
+{\fonttbl\f0\fnil\fcharset0 Monaco;\f1\fnil\fcharset0 Menlo-Regular;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red38\green71\blue75;\red63\green110\blue116;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f0\fs20 \cf0 ***FEATURES***\
+\
+MISCELLANEOUS\
+-- Change the type names from variables to constants, or internal things, or something like that.\
+-- PARTIAL Modify _now() functions so that when there's an error the don't clear the value, but they do return (error).\
+\
+Internals: \
+-- Add error checking to all malloc() calls.\
+-- Getting lengths of arrays is sometimes ints, sometimes longs, and sometimes size_t's. It should be size_t's, and unsigned longs when necessary.\
+-- Refactor eval() to create value_bifcall_raw() which handles the arguments and everything. This will be both cleaner and easier to profile.\
+\
+SUPPORT\
+-- DONE Logarithms and the natural exponentiation function. (Change from MPF to MPFR.)\
+-- DONE Number-theoretic functions.\
+-- DONE Negative and fractional exponents.\
+-- DONE Safe and effective memory allocation.\
+-- DONE Array brackets.\
+-- DONE Ranges.\
+-- DONE Symbols.\
+-- DONE Control structures (if, while, case, for).\
+-- DONE break, continue, yield, return.\
+-- DONE Evaluation inside of QUOTE.\
+-- DONE Functions, with and without scope change.\
+\
+To Finish\
+-- PARTIAL Regular expressions. Still needs external support for subexpressions.\
+-- PARTIAL Array functions with hashes.\
+-- PARTIAL Internal functions that affect their input, like (delete!).\
+-- PARTIAL Iterators: summation, delete_if, flatmap, \
+-- PARTIAL At least partial test suites for every type.\
+\
+Features for Second Release:\
+-- DONE: New syntax for arrays and hashes: (a, b, c) and (ka -> va, kb -> vb, kc -> vc)\
+-- UNTESTED: Put pairs in hashes.\
+-- UNTESTED: Anonymous functions using "lambda". There may be points where udf->name is accessed but it equals NULL because there is no name.\
+-- PARTIAL: Implement linked lists using pairs, and *make sure all the functions still work*. Hasn't been implemented for value_array.c and maybe other files as well.\
+-- Commas to separate expressions and use either infix or prefix.\
+-- In functions: default values, optional, rest, keyword\
+-- Lisp-style macros. (Can a macro be defined right now, as a function? Like, a function for defining macros? Yes, but it's messy.)\
+-- Specialized memory management that doesn't rely on malloc().\
+-- File I/O.\
+-- Optimized tail recursive calls, and other optimizations.\
+-- Full test suites for all types and many different types of syntax.\
+\
+Macros\
+-- lambda(), for(), \
+\
+Advanced features (roughly in order of difficulty, descending): \
+-- Namespaces, possibly related to files.\
+-- Pointers.\
+-- Profiler.\
+-- Exception handling.\
+-- Debugger.\
+-- Classes.\
+-- Pass-by-reference and garbage collection.\
+\
+***MEMORY ALLOCATION AND PERFORMANCE***\
+\
+MEMORY ALLOCATION BUGS\
+-- value_for() is causing leakage. I think this is fixed, but I haven't done extensive tests.\
+-- A lot of iterators have leakage because (tmp) isn't being cleared in the right place.\
+\
+-- Array memory allocation needs to be consistent.\
+-- It is possible that there is a return_if_error() or something like that which is returning before clearing some stuff that was previously allocated.\
+\
+USING UP TONS OF MEMORY\
+-- Scope, especially in recursive functions. You can't take a recursive function further than about 3000 calls.\
+\
+PERFORMANCE\
+-- UDF shells are being converted every time the function is called. This is because in words_to_values() a copy of the UDF is being pulled from the function list: (
+\f1\fs22 \CocoaLigature0 x = \cf2 value_hash_get\cf0 (\cf3 ud_functions\cf0 , values[i])
+\f0\fs20 \CocoaLigature1 )\
+\
+***BUGS***\
+\pard\tx560\pardeftab560\ql\qnatural\pardirnatural
+\cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+\cf0 BUGS\
+-- CRITICAL: (a = 0..99 to_a) followed by (
+\f2\fs24 \CocoaLigature0 a = a map (def mapfun (x) ((x * 1103515245 + 12345) & 255))
+\f0\fs20 \CocoaLigature1 ) results in EXC_BAD_ACCESS when the interpreter tries to print it. In value_vfprintf_generic(), (format) is out of bounds, even though it's perfectly legal in value_vfprintf() and it should be exactly the same value. value_shuffle() has a similar problem if you call it about five times. Also try (0...2000 to_a), it throws the same error. These do not: (a = 1...50000 to_a), (a = 1..50000 to_a), (a = 1...50001 to_a), (a = 1...60000 to_a). (1000...1070 to_a) also causes an error, and (1000...1060 to_a) causes a somewhat different error.\
+-- MPFs that are too large are crashing the program when casted to MPZs.\
+-- ("hello\\n" // comment) doesn't remove the comment. It looks like this is caused by the \\n in the string.\
+-- at() sometimes doesn't work because of the whole optional argument thing.\
+-- dv() doesn't always work. See macro.simf.\
+-- deriv ` (1 / x) is crashing. The problem doesn't look like it's coming from value_deriv(), but it doesn't look like it's coming from the optimizer either.\
+\
+Less Important\
+-- If a function has too many arguments, it should be caught at runtime instead of compile-time.\
+-- In nested arrays, the way [][]= works is very inelegant. Make it more elegant.\
+-- The line number always goes to the end of the current block. I compensated by having it print out the blocks that the error was in.\
+-- 0.01 prints out as nothing. Also, 0.x does not print the zero. There are some other problems with printing floats. Later: I changed the output to just use mpfr_sprintf() and tested it with some very large values, and it seems to work.\
+-- Rarely, words[i] in statement_to_values is trying to free memory that was not allocated. Probably the wordcount is incorrect.\
+-- 
+\f1\fs22 \CocoaLigature0 (printf "a[%v] = %v\\n" i a[i])
+\f0\fs20 \CocoaLigature1  compiles to 
+\f1\fs22 \CocoaLigature0 (printf "a[%v] = %v\\n" i (at a (0)) ])
+\f0\fs20 \CocoaLigature1 . Later: This must be in a file because it works fine in the REPL.\
+-- Unimportant: In value_copy(), type will not be copied so if it's cleared in one copy it won't appear cleared in the other.\
+-- Before, (format) was being copied inside of value_put() so that the value outside of value_put() wouln't be changed. I removed this because it was causing problems. Keep the copy in place, but do it outside of value_put(). This doesn't appear to be a problem, but I must have been making a copy for a reason.\
+-- Seemingly Gone: If an input string is too long, it takes seemingly forever to parse. If it is just a little bit shorter, it parses instantly.\
+\
+FIXED BUGS\
+-- Sometimes, the spec is wrong for (def). WHY?: In value_hash_exists_str(), a new string is created inside of the VALUE_STR. The string was not being null-terminated, and was spilling over into (def)'s spec.\
+-- The prograam can't seem to find any function except for '+'. They exist in the hash, but they are pointing to nil. WHY?: A loop was going from 1 until length+1 instead of from 0 until length, so only functions that weren't in the first bucket slot (which is practically none) were being found.\
+\
+FUNCTIONS TO IMPLEMENT\
+\
+- value_lstrip!()\
+- value_rstrip!()\
+\
+- value_delete_if()\
+- value_delete_if!()\
+- value_flatmap()\
+- value_drop!()\
+- value_drop_while()\
+- value_drop_while!()\
+- value_take!()\
+- value_take_while()\
+- value_take_while!()\
+\
+}

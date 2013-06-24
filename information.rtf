@@ -1,0 +1,32 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf320
+{\fonttbl\f0\fnil\fcharset0 Monaco;}
+{\colortbl;\red255\green255\blue255;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f0\fs20 \cf0 I tried implementing a system where integers were used by default and then upgraded to mpz where bigger numbers were necessary, but I found it to be considerably slower. mpz is highly optimized: it is only about four times as slow as integers by themselves. The only really slow part is when they have to be initialized.\
+\
+THINGS THAT MAY CAUSE CONFUSION\
+\
+In some cases, it is assumed that the length of a linear container (array, string, etc) is less than LONG_MAX.\
+\
+***IMPLEMENTATION SPEEDS***\
+\
+Although the interpreter may be slow, I have tried to optimize the common internal functions as much as possible. Here are some numbers.\
+\
+--MPZ\
+\
+add_now(number, 10) x times, then clear(number):\
+  20 per usec for up to 10,000,000\
+\
+--Arrays\
+\
+append_now(array, 10) x times, then clear(array):\
+  2.0 per usec for arrays length approx. 1 to 30,000\
+  1.5 per usec for arrays length approx. 30,000 to 10,000,000\
+\
+--Linked Lists\
+\
+cons_now(10, list) x times, then clear(list):\
+  1.2 per usec for lists length approx. 1 to 100,000\
+  1.0 per usec for lists length approx. 100,000 to 10,000,000\
+}
